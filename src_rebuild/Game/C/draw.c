@@ -15,6 +15,7 @@
 #include "debris.h"
 #include "ASM/rndrasm.h"
 #include "event.h"
+#include "parkinglot.h"
 
 MATRIX aspect =
 {
@@ -1524,6 +1525,11 @@ void DrawMapPSX(int* comp_val)
 #endif
 
 	SetupPlaneColours(combointensity);
+
+	drawData.other_models_found = ParkingLot_AppendDrawObjects(
+		model_object_ptrs,
+		drawData.other_models_found,
+		MAX_DRAWN_BUILDINGS);
 
 	if (drawData.anim_objs_found)
 		DrawAllAnimatingObjects((CELL_OBJECT**)anim_obj_buffer, drawData.anim_objs_found);

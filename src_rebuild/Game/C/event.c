@@ -22,6 +22,7 @@
 #include "dr2roads.h"
 #include "ASM/rndrasm.h"
 #include "cutrecorder.h"
+#include "parkinglot.h"
 
 struct FixedEvent // same as EVENT but different fields
 {
@@ -985,7 +986,7 @@ void SetUpEvents(int full)
 
 	if (full)
 	{
-		EventCop = (CELL_OBJECT*)D_MALLOC(sizeof(CELL_OBJECT) * 16);
+		EventCop = (CELL_OBJECT*)D_MALLOC(sizeof(CELL_OBJECT) * 64);
 		event = (EVENT*)mallocptr;
 	}
 
@@ -2682,6 +2683,8 @@ void StepEvents(void)
 				x++;
 			}
 		}
+
+		ParkingLot_AppendEventObjects(EventCop, &event_models_active, 64);
 	}
 
 	if (cameraDelay.delay != 0 && --cameraDelay.delay == 0)

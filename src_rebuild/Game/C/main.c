@@ -59,6 +59,7 @@
 #include "platform.h"
 #include "state.h"
 #include "cutrecorder.h"
+#include "parkinglot.h"
 
 int levelstartpos[8][4] = {
 	{ 4785, -1024, -223340, 0},
@@ -317,6 +318,7 @@ void ProcessLumps(char* lump_ptr, int lump_size)
 			ProcessCarModelLump(car_models_lump, 0);
 			
 			InitModelNames();
+			ParkingLot_Init();
 
 			SetUpEvents(1);
 		}
@@ -491,6 +493,14 @@ void State_GameInit(void* param)
 	}
 
 	LoadMission(gCurrentMissionNumber);
+
+	if (gCustomParkingLot)
+	{
+		maxCivCars = 0;
+		maxParkedCars = 0;
+		maxCopCars = 0;
+		CopsAllowed = 0;
+	}
 
 	if (gCurrentMissionNumber == 38)
 		residentCarModels[SPECIAL_CAR_SLOT] = 9;
@@ -2002,6 +2012,17 @@ int redriver2_main(int argc, char** argv)
 			SetState(STATE_GAMELAUNCH);
 		}
 #endif // _DEBUG_OPTIONS
+		else if (!strcmp(argv[i], "-parkinglot"))
+		{
+			SetFEDrawMode();
+
+			gCustomParkingLot = 1;
+			gInFrontend = 0;
+			AttractMode = 0;
+			gCurrentMissionNumber = 50;
+			GameType = GAME_TAKEADRIVE;
+			SetState(STATE_GAMELAUNCH);
+		}
 		else if (!strcmp(argv[i], "-replay"))
 		{
 			if (argc - i < 2)
@@ -2724,7 +2745,6 @@ int Havana3DOcclusion(occlFunc func, int* param)
 
 	return 1;
 }
-
 
 
 
