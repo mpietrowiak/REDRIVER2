@@ -1,6 +1,5 @@
 -- premake5.lua
 
-require "premake_modules/usage"
 require "premake_modules/emscripten"
 require "premake_modules/vscode"
 
@@ -22,7 +21,6 @@ SDL2_DIR = os.getenv("SDL2_DIR") or "dependencies/SDL2"
 OPENAL_DIR = os.getenv("OPENAL_DIR") or "dependencies/openal-soft"
 JPEG_DIR = os.getenv("JPEG_DIR") or "dependencies/jpeg"
 
-WEBDEMO_DIR = os.getenv("WEBDEMO_DIR") or "../../web_demo@/"	-- FIXME: make it better
 RED2_DIR = os.getenv("RED2_DIR") or "../../data@/"
 WEBSHELL_PATH = "../platform/Emscripten"	-- must be relative to makefile path (SADLY)
 
@@ -71,16 +69,14 @@ workspace "REDRIVER2"
 		}
 
 		linkoptions  { 
-			"-s TOTAL_MEMORY=1073741824",
+			"-s INITIAL_MEMORY=1073741824",
 			"-s USE_SDL=2",
 			"-s USE_LIBJPEG=1",
 			"-s FULL_ES2=1",
 			--"-s USE_WEBGL2=1",
 			"-s ASYNCIFY=1",
 			"-s ALLOW_MEMORY_GROWTH=1",
-			"-s GL_TESTING=1",
 			("--shell-file " .. WEBSHELL_PATH .. "/shell.html"),
-			("--preload-file " .. WEBDEMO_DIR),
 			("--preload-file " .. RED2_DIR),
 			"-s 'EXPORTED_RUNTIME_METHODS=[\"ccall\", \"writeArrayToMemory\"]'",
 			"-s 'EXPORTED_FUNCTIONS=[\"_main\", \"_malloc\"]'"
@@ -140,12 +136,16 @@ workspace "REDRIVER2"
 		filter "platforms:*-arm64"
 			architecture "arm64"
 	else
-		platforms { "x86", "x64" }
+		if os.target() == "macosx" then
+			platforms { "arm64" }
+		else
+			platforms { "x86", "x64" }
+		end
 	end
 	
 	startproject "REDRIVER2"
 	
-	configuration "raspberry-pi"
+	filter "options:raspberry-pi"
 		defines { "__RPI__" }
 
 	filter "system:Linux"
@@ -166,6 +166,11 @@ workspace "REDRIVER2"
 
 	filter "system:Windows"
 		disablewarnings { "4996", "4554", "4244", "4101", "4838", "4309" }
+
+	filter { "system:macosx", "platforms:arm64" }
+		architecture "ARM64"
+		cppdialect "C++11"
+		buildoptions { "-Wno-c++11-narrowing", "-Wno-write-strings" }
 
     filter "configurations:Debug"
         defines { 
@@ -210,9 +215,11 @@ project "REDRIVER2"
         "Game", 
     }
 	
-	uses { 
-		"PsyCross",
-	}
+    links { "PsyCross" }
+    includedirs {
+        "PsyCross/include",
+        "PsyCross/include/psx",
+    }
 
     defines { GAME_REGION }
 	defines { "BUILD_CONFIGURATION_STRING=\"%{cfg.buildcfg}\"" }
@@ -228,7 +235,7 @@ project "REDRIVER2"
         "Game/**.c"
     }
 
-    filter {"system:Windows or linux or platforms:emscripten"}
+    filter {"system:Windows or linux or macosx or platforms:emscripten"}
         --dependson { "PsyX" }
         links { "jpeg" }
 				
@@ -285,6 +292,25 @@ project "REDRIVER2"
             "dl",
         }
 
+    filter "system:macosx"
+        includedirs {
+            SDL2_DIR.."/include/SDL2",
+            OPENAL_DIR.."/include",
+            JPEG_DIR.."/include",
+        }
+
+        libdirs {
+            SDL2_DIR.."/lib",
+            OPENAL_DIR.."/lib",
+            JPEG_DIR.."/lib",
+        }
+
+        links {
+            "SDL2",
+            "openal",
+            "jpeg",
+        }
+
     filter "configurations:Debug"
 		targetsuffix "_dbg"
         defines { 
@@ -296,6 +322,14 @@ project "REDRIVER2"
 
     filter "configurations:Release"
         optimize "Speed"
+
+	filter { "configurations:Release", "platforms:emscripten" }
+		buildoptions { "-flto" }
+		linkoptions {
+			"-O3",
+			"-flto",
+			"-s ASSERTIONS=0",
+		}
 		
 	filter "configurations:Release_dev"
 		targetsuffix "_dev"

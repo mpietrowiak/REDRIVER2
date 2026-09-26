@@ -54,8 +54,27 @@ project "PsyCross"
             "SDL2",
         }
 
+    filter "system:macosx"
+        includedirs {
+            SDL2_DIR.."/include/SDL2",
+            OPENAL_DIR.."/include",
+        }
+
+        libdirs {
+            SDL2_DIR.."/lib",
+            OPENAL_DIR.."/lib",
+        }
+
+        links {
+            "SDL2",
+            "openal",
+        }
+
     filter "configurations:Release"
         optimize "Speed"
+
+	filter { "configurations:Release", "platforms:emscripten" }
+		buildoptions { "-flto" }
 
 	filter "configurations:Release_dev"
         optimize "Speed"

@@ -133,7 +133,10 @@ function LSFS() {
     }
     if (data.contents) {
       if (data.contents.length) {
-        node.contents = data.contents;
+        // Modern Emscripten MEMFS expects file contents to be a typed array.
+        // JSON persistence restores it as a plain Array otherwise, which
+        // crashes reads because Array does not implement subarray().
+        node.contents = new Uint8Array(data.contents);
       } else {
         node.contents = {};
         for (var name in data.contents) {
